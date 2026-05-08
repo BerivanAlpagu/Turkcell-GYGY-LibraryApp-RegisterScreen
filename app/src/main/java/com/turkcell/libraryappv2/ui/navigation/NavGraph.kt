@@ -11,7 +11,7 @@ import com.turkcell.libraryappv2.ui.screen.RegisterScreen
 
 @Composable
 fun NavGraph(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = Screen.Login.route)
+    NavHost(navController = navController, startDestination = Screen.Register.route)
     {
         composable(Screen.Login.route) {
             LoginScreen(

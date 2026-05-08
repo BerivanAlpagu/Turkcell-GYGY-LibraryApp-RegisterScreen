@@ -1,32 +1,29 @@
 package com.turkcell.libraryappv2.data.repository
 
-import kotlinx.coroutines.delay
-import kotlin.random.Random
+import com.turkcell.libraryappv2.data.model.Profile
+import com.turkcell.libraryappv2.data.supabase.supabase
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.postgrest
 
 class AuthRepository {
-
     suspend fun signIn(email: String, password: String):  Result<Unit> = runCatching {
-        delay(timeMillis = 2000) // dışarıya istek atar gibi
-
-        val isSucces =Random.nextBoolean()
-        if(isSucces)
-            Unit
-        else
-            throw Exception("Fake login failed")
-    }
-
-    suspend fun signUp(name: String, email: String, password: String): Result<Unit> = runCatching {
-        delay(timeMillis = 2000) // dışarıya istek atar gibi
-        
-        // Simülasyon: Eğer daha önce kayıtlı bir email girildiyse (örneğin test@test.com) hata fırlat
-        if (email == "test@test.com") {
-            throw Exception("Bu e-posta adresi zaten kayıtlı!")
+        supabase.auth.signInWith(Email){
+            this.email = email
+            this.password = password
         }
-
-        val isSuccess = Random.nextBoolean()
-        if(isSuccess)
-            Unit
-        else
-            throw Exception("Fake register failed")
     }
+    suspend fun signUp(
+        email: String,
+        password: String,
+        fullName: String,
+        studentNo: String?): Result<Unit> = runCatching {
+            supabase.auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
+            }
+        val userId = supabase.auth.currentUserOrNull()?.id ?: error("Kullanıcı bulunamadı")
+        supabase.postgrest["profiles"].insert(
+            Profile(userId, "student", fullName, studentNo))
+        }
 }

@@ -23,7 +23,7 @@ class AuthViewModel: ViewModel() {
 
     fun signIn(email: String, password: String)
     {
-        viewModelScope.launch {
+        viewModelScope.launch { // işlemi başlat demek
             _authState.value = AuthState.Loading
 
             repository
@@ -33,13 +33,16 @@ class AuthViewModel: ViewModel() {
         }
     }
 
-    fun signUp(name: String, email: String, password: String)
-    {
+    fun signUp(
+        email: String,
+        password: String,
+        fullName: String,
+        studentNo: String?
+    ) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-
             repository
-                .signUp(name, email, password)
+                .signUp(email, password, fullName, studentNo)
                 .onSuccess { result -> _authState.value = AuthState.Success("student") }
                 .onFailure { ex -> _authState.value = AuthState.Error(ex.message ?: "Kayıt başarısız") }
         }

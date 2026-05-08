@@ -34,13 +34,14 @@ import com.turkcell.libraryappv2.ui.viewmodel.AuthViewModel
 @Composable
 fun RegisterScreen(onNavigateToLogin: () -> Unit) {
     // ViewModel'imi çağırdım ve state'ini dinlemeye başladım
-    val authViewModel: AuthViewModel = viewModel() 
+    val authViewModel: AuthViewModel = viewModel()
     val authState by authViewModel.authState.collectAsState()
 
     // Kullanıcının gireceği ad, e-posta ve şifre değerlerini tutmak için değişkenlerimi oluşturdum
-    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var fullName by remember { mutableStateOf("") }
+    var studentNo by remember { mutableStateOf("") }
 
     // Kayıt başarılı olduğunda Login'e gitmesi için state'i dinliyorum
     LaunchedEffect(authState) {
@@ -57,18 +58,18 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
         Text("Kütüphane Sistemi")
         Spacer(modifier =  Modifier.height(8.dp))
         Text("Kayıt Ol")
-        
+
         // Ad Soyad için kutucuğumu yaptım
         OutlinedTextField(
             enabled = authState !is AuthState.Loading,
             modifier = Modifier.fillMaxWidth(),
-            value = name,
+            value = fullName,
             label = { Text("Ad Soyad") },
-            onValueChange = { value -> name = value },
+            onValueChange = { value -> fullName = value },
             singleLine = true
         )
         Spacer(modifier = Modifier.height(10.dp))
-        
+
         // E-posta için kutucuğumu yaptım ve klavye tipini email olarak ayarladım
         OutlinedTextField(
             enabled = authState !is AuthState.Loading,
@@ -80,7 +81,17 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
         Spacer(modifier = Modifier.height(10.dp))
-        
+
+        OutlinedTextField(
+            value = studentNo,
+            onValueChange = { studentNo = it },
+            label = { Text("Öğrenci No (opsiyonel)") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
         // Şifre için kutucuğumu yaptım ve gizli görünmesi için PasswordVisualTransformation ekledim
         OutlinedTextField(
             enabled = authState !is AuthState.Loading,
@@ -93,7 +104,7 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
             visualTransformation = PasswordVisualTransformation()
         )
         Spacer(modifier = Modifier.height(10.dp))
-        
+
         // İşlem yapılıyorsa (Loading) dönen bir ikon gösteriyorum, yoksa butonumu gösteriyorum
         if(authState is AuthState.Loading) {
             Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
@@ -106,27 +117,28 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
         } else {
             Button(
                 onClick = {
-                    authViewModel.signUp(name, email, password)
-                }, 
+                    authViewModel.signUp(fullName, email, password, studentNo)
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Kayıt Ol")
             }
         }
-        
+
         // Eğer hata varsa, hatayı ekrana kırmızı renkli yazıyla basıyorum
         if (authState is AuthState.Error) {
             Text(
-                text = (authState as AuthState.Error).message, 
+                text = (authState as AuthState.Error).message,
                 color = MaterialTheme.colorScheme.error
             )
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Kullanıcının zaten hesabı varsa Login ekranına dönebilmesi için buton
         TextButton(onClick = { onNavigateToLogin() }) {
             Text("Zaten hesabınız var mı? Giriş Yap")
         }
     }
 }
+
