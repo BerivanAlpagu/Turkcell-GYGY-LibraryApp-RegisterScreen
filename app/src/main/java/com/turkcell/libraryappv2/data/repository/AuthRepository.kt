@@ -27,6 +27,9 @@ class AuthRepository {
             Profile(userId, "student", fullName, studentNo))
         }
 
+    suspend fun signOut() {
+        supabase.auth.signOut()
+    }
     fun getCurrentUserId() : String?
     {
         return supabase.auth.currentUserOrNull()?.id
@@ -37,4 +40,6 @@ class AuthRepository {
             .select { filter { eq("user_id", userId) }  }
             .decodeSingle<Profile>()
     }.getOrNull()
+
+
 }

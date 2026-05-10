@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turkcell.libraryappv2.data.model.Profile
 import com.turkcell.libraryappv2.data.repository.AuthRepository
+import com.turkcell.libraryappv2.data.supabase.supabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 
 sealed class AuthState{
     // o anki sayfanın durumu başarılı,başarısız,loading(hala yükleniyor)
@@ -16,14 +19,56 @@ sealed class AuthState{
     data class Success(val role: String): AuthState()
     data class Error(val message: String): AuthState()
 }
+
+sealed class SessionState{
+    object Initializing : SessionState()
+    object Unauthenticated : SessionState()
+    data class Authenticated(val role: String) : SessionState()
+}
 class AuthViewModel: ViewModel() {
     private val repository = AuthRepository()
     //iş mantığını stateti tutarıx viewmodelda,, bşarılı, yükleniyor, idle vs gibi stateleri(durumları tanımlarız
+    // Auth sayfalarını yönetilirken bu stateleri kullanırız
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
+    //sessionları yönetiriz
+    private val _sessionState = MutableStateFlow<SessionState>(SessionState.Initializing)
+    val sessionState: StateFlow<SessionState> = _sessionState
+
+
     private val _profile = MutableStateFlow<Profile?>(null)
     val profile: StateFlow<Profile?> = _profile
+
+    init { // init ile uygulama açılmasıyla ilk başta başlatır funcları
+        viewModelScope.launch { // launch ile statei başlar
+            //session stateleri hesapla
+            supabase.auth.sessionStatus.collect { status ->
+                when (status)
+                {
+                    is SessionStatus.Authenticated -> {
+                        val userId = repository.getCurrentUserId()
+                        if(userId==null)
+                        {
+                            _profile.value = null
+                            _sessionState.value = SessionState.Unauthenticated
+                            return@collect
+                        }
+                        val profile = repository.getProfile(userId)
+                        _profile.value = profile
+                        _sessionState.value = SessionState.Authenticated(profile?.role ?: "student")
+                    }
+                    SessionStatus.Initializing -> {
+                        _sessionState.value = SessionState.Initializing
+                    }
+                    else -> {
+                        _profile.value = null
+                        _sessionState.value = SessionState.Unauthenticated
+                    }
+                }
+            }
+        }
+    }
 
     fun signIn(email: String, password: String)
     {
@@ -64,5 +109,13 @@ class AuthViewModel: ViewModel() {
 
     fun resetState() {
         _authState.value = AuthState.Idle
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            repository.signOut()
+            _profile.value = null
+            _authState.value = AuthState.Idle
+        }
     }
 }

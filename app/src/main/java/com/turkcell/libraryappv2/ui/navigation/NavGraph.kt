@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.turkcell.libraryappv2.ui.screen.HomeScreen
 import com.turkcell.libraryappv2.ui.screen.LoginScreen
 import com.turkcell.libraryappv2.ui.screen.RegisterScreen
+import com.turkcell.libraryappv2.ui.screen.SplashScreen
 import com.turkcell.libraryappv2.ui.viewmodel.AuthViewModel
 import com.turkcell.libraryappv2.ui.viewmodel.BookViewModel
 
@@ -16,11 +17,26 @@ import com.turkcell.libraryappv2.ui.viewmodel.BookViewModel
 @Composable
 fun NavGraph(navController: NavHostController = rememberNavController()) {
     //her bir screen için viewmodel yazmaktan kurulmak için
-    val authViewModel: AuthViewModel = viewModel()
+
+    val authViewModel: AuthViewModel = viewModel() // oluşturulma aşaması.. init {}
     val bookViewModel: BookViewModel = viewModel()
 
-    NavHost(navController = navController, startDestination = Screen.Login.route)
+    NavHost(navController = navController, startDestination = Screen.Splash.route)
     {
+        composable(Screen.Splash.route) {
+            SplashScreen(authViewModel,
+                onAuthenticated = { role ->
+                    navController.navigate(Screen.Homepage.route){
+                        popUpTo(Screen.Splash.route) {inclusive=true}
+                    }
+                },
+                onUnauthenticated = {
+                    navController.navigate(Screen.Login.route)
+                    {
+                        popUpTo(Screen.Splash.route) {inclusive=true}
+                    }
+                })
+        }
         composable(Screen.Login.route) { LoginScreen(
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route) },
