@@ -10,12 +10,14 @@ import com.turkcell.libraryappv2.ui.screen.HomeScreen
 import com.turkcell.libraryappv2.ui.screen.LoginScreen
 import com.turkcell.libraryappv2.ui.screen.RegisterScreen
 import com.turkcell.libraryappv2.ui.viewmodel.AuthViewModel
+import com.turkcell.libraryappv2.ui.viewmodel.BookViewModel
 
 
 @Composable
 fun NavGraph(navController: NavHostController = rememberNavController()) {
     //her bir screen için viewmodel yazmaktan kurulmak için
     val authViewModel: AuthViewModel = viewModel()
+    val bookViewModel: BookViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = Screen.Login.route)
     {
@@ -29,12 +31,19 @@ fun NavGraph(navController: NavHostController = rememberNavController()) {
                 },
                 authViewModel
             ) }
+
+        //ödev 1 :kayıtol registerde succes yapısı oluştur ödev1 logindeki gibi
         composable(Screen.Register.route) { RegisterScreen(
             onNavigateToLogin = { navController.navigate(Screen.Login.route) },
+            onRegisterSuccess = {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(Screen.Register.route) { inclusive = true }
+                }
+            },
             authViewModel
         ) }
         composable(Screen.Homepage.route){
-            HomeScreen(authViewModel)
+            HomeScreen(authViewModel,bookViewModel)
         }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,10 +39,18 @@ import com.turkcell.libraryappv2.ui.viewmodel.AuthViewModel
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
+    onRegisterSuccess: () -> Unit,
     authViewModel: AuthViewModel
 ) {
 
     val authState by authViewModel.authState.collectAsState()
+
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onRegisterSuccess()
+            authViewModel.resetState()
+        }
+    }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }

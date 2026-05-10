@@ -1,0 +1,68 @@
+package com.turkcell.libraryappv2.ui.viewmodel
+
+
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.turkcell.libraryappv2.data.model.Book
+import com.turkcell.libraryappv2.data.repository.BookRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class BookViewModel : ViewModel() {
+    private val repository = BookRepository()
+
+    private val _books = MutableStateFlow<List<Book>>(emptyList())
+    val books: StateFlow<List<Book>> = _books
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
+    private val _searchResults = MutableStateFlow<List<Book>>(emptyList())
+    val searchResults: StateFlow<List<Book>> = _searchResults
+
+    init {
+        loadBooks()
+    }
+
+    fun loadBooks() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository
+                .getAllBooks()
+                .onSuccess { _books.value = it }
+                .onFailure { _error.value = it.message }
+            _isLoading.value = false
+        }
+    }
+
+
+    fun updateBook(book: Book) {
+        viewModelScope.launch {
+            repository
+                .updateBook(book)
+                .onSuccess { loadBooks() }
+                .onFailure { _error.value = it.message }
+        }
+    }
+    fun deleteBook(id: String) {
+        viewModelScope.launch {
+            repository
+                .deleteBook(id)
+                .onSuccess { loadBooks() }
+                .onFailure { _error.value = it.message }
+        }
+    }
+    fun searchBooks(query: String) {
+        viewModelScope.launch {
+            repository
+                .searchBooks(query)
+                .onSuccess { _searchResults.value = it }
+                .onFailure { _error.value = it.message }
+        }
+    }
+}
