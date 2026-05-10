@@ -2,6 +2,7 @@ package com.turkcell.libraryappv2.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.turkcell.libraryappv2.data.model.Profile
 import com.turkcell.libraryappv2.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,14 +13,17 @@ sealed class AuthState{
     // register, login durumunun (stateleri) tanımlarım, tutarım.
     object Idle: AuthState()
     object Loading: AuthState()
-    data class Success(val token: String): AuthState()
+    data class Success(val role: String): AuthState()
     data class Error(val message: String): AuthState()
 }
 class AuthViewModel: ViewModel() {
     private val repository = AuthRepository()
     //iş mantığını stateti tutarıx viewmodelda,, bşarılı, yükleniyor, idle vs gibi stateleri(durumları tanımlarız
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
-    val authState: StateFlow<AuthState> = _authState;
+    val authState: StateFlow<AuthState> = _authState
+
+    private val _profile = MutableStateFlow<Profile?>(null)
+    val profile: StateFlow<Profile?> = _profile
 
     fun signIn(email: String, password: String)
     {
@@ -28,7 +32,17 @@ class AuthViewModel: ViewModel() {
 
             repository
                 .signIn(email, password)
-                .onSuccess { result -> _authState.value = AuthState.Success("student") }
+                .onSuccess {
+                    val userId = repository.getCurrentUserId()
+                    if(userId != null)
+                    {
+                        val profile = repository.getProfile(userId)
+                        _profile.value = profile
+                        _authState.value = AuthState.Success("student")
+                    }else{
+                        _authState.value = AuthState.Error("Profil bulunamadı.")
+                    }
+                }
                 .onFailure { ex -> _authState.value = AuthState.Error(ex.message ?: "Giriş başarısız") }
         }
     }
@@ -46,5 +60,9 @@ class AuthViewModel: ViewModel() {
                 .onSuccess { result -> _authState.value = AuthState.Success("student") }
                 .onFailure { ex -> _authState.value = AuthState.Error(ex.message ?: "Kayıt başarısız") }
         }
+    }
+
+    fun resetState() {
+        _authState.value = AuthState.Idle
     }
 }

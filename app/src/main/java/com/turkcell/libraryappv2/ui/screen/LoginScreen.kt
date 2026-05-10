@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,14 +32,24 @@ import com.turkcell.libraryappv2.ui.viewmodel.AuthState
 import com.turkcell.libraryappv2.ui.viewmodel.AuthViewModel
 
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit) {
-    //LaunchedEffect() { }
+fun LoginScreen(onNavigateToRegister: () -> Unit,
+                onLoginSuccess: (role:String) -> Unit,
+                authViewModel: AuthViewModel
+) {
 
-    val authViewModel: AuthViewModel = viewModel() // Navigasyon ekranına taşı.
     val authState by authViewModel.authState.collectAsState()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    // Yalnızca authState değişirse çalış, tüm recompositionlarda değil.. tüm recompositionlarda çalışması demek remember yapısı olur o zman her değiştiğinde durum hep çağırırı bu da side effectleri yani aslında bilmek istemediğimiz şeyleri de bize vermesi , yorması demek bunu yerine launeffect verip sadece istediğimizde bize bildirmesi kontrol altında ve sideeffectleri engeller
+    LaunchedEffect(authState) {
+        if(authState is AuthState.Success)
+        {
+            onLoginSuccess((authState as AuthState.Success).role)
+            authViewModel.resetState()
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -95,3 +106,5 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
         }
     }
 }
+
+

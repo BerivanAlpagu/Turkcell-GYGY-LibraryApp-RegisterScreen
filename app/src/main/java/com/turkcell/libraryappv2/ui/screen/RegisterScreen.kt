@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +18,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,63 +25,73 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.turkcell.libraryappv2.ui.viewmodel.AuthState
 import com.turkcell.libraryappv2.ui.viewmodel.AuthViewModel
 
-@Composable
-fun RegisterScreen(onNavigateToLogin: () -> Unit) {
-    // ViewModel'imi çağırdım ve state'ini dinlemeye başladım
-    val authViewModel: AuthViewModel = viewModel()
-    val authState by authViewModel.authState.collectAsState()
 
-    // Kullanıcının gireceği ad, e-posta ve şifre değerlerini tutmak için değişkenlerimi oluşturdum
+@Composable
+fun RegisterScreen(
+    onNavigateToLogin: () -> Unit,
+    authViewModel: AuthViewModel
+) {
+
+    val authState by authViewModel.authState.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var studentNo by remember { mutableStateOf("") }
 
-    // Kayıt başarılı olduğunda Login'e gitmesi için state'i dinliyorum
-    LaunchedEffect(authState) {
-        if (authState is AuthState.Success) {
-            onNavigateToLogin()
-        }
-    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Kütüphane Sistemi")
-        Spacer(modifier =  Modifier.height(8.dp))
-        Text("Kayıt Ol")
+        Text(
+            text = "Kayıt Ol",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // Ad Soyad için kutucuğumu yaptım
         OutlinedTextField(
-            enabled = authState !is AuthState.Loading,
-            modifier = Modifier.fillMaxWidth(),
             value = fullName,
+            onValueChange = { fullName = it },
             label = { Text("Ad Soyad") },
-            onValueChange = { value -> fullName = value },
+            modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // E-posta için kutucuğumu yaptım ve klavye tipini email olarak ayarladım
         OutlinedTextField(
-            enabled = authState !is AuthState.Loading,
-            modifier = Modifier.fillMaxWidth(),
             value = email,
+            onValueChange = { email = it },
             label = { Text("E-posta") },
-            onValueChange = { value -> email = value },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            singleLine = true
         )
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Şifre") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = studentNo,
@@ -92,52 +103,40 @@ fun RegisterScreen(onNavigateToLogin: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Şifre için kutucuğumu yaptım ve gizli görünmesi için PasswordVisualTransformation ekledim
-        OutlinedTextField(
-            enabled = authState !is AuthState.Loading,
-            modifier = Modifier.fillMaxWidth(),
-            value = password,
-            label = { Text("Şifre") },
-            onValueChange = { value -> password = value },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = PasswordVisualTransformation()
-        )
-        Spacer(modifier = Modifier.height(10.dp))
+        if (authState is AuthState.Error) {
+            Text(
+                text = (authState as AuthState.Error).message,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+        }
 
-        // İşlem yapılıyorsa (Loading) dönen bir ikon gösteriyorum, yoksa butonumu gösteriyorum
-        if(authState is AuthState.Loading) {
-            Button(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = {
+                authViewModel.signUp(
+                    email = email.trim(),
+                    password = password,
+                    fullName = fullName.trim(),
+                    studentNo = studentNo.trim().ifEmpty { null }
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = authState !is AuthState.Loading
+        ) {
+            if (authState is AuthState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
-            }
-        } else {
-            Button(
-                onClick = {
-                    authViewModel.signUp(fullName, email, password, studentNo)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            } else {
                 Text("Kayıt Ol")
             }
         }
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Eğer hata varsa, hatayı ekrana kırmızı renkli yazıyla basıyorum
-        if (authState is AuthState.Error) {
-            Text(
-                text = (authState as AuthState.Error).message,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Kullanıcının zaten hesabı varsa Login ekranına dönebilmesi için buton
-        TextButton(onClick = { onNavigateToLogin() }) {
-            Text("Zaten hesabınız var mı? Giriş Yap")
+        TextButton(onClick = {onNavigateToLogin()}) {
+            Text("Zaten hesabın var mı? Giriş Yap")
         }
     }
 }
