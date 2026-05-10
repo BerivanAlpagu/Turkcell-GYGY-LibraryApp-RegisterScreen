@@ -6,5 +6,6 @@ sealed class Screen (val route: String){
     object Register:Screen(route = "register")
     object Homepage : Screen("homepage")
     object Splash : Screen("splash")
-
+    object Borrowings : Screen("borrowings")
+    object AdminPanel : Screen("admin_panel")
 }

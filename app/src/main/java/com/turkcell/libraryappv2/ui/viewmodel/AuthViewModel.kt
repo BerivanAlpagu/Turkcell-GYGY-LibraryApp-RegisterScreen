@@ -83,7 +83,7 @@ class AuthViewModel: ViewModel() {
                     {
                         val profile = repository.getProfile(userId)
                         _profile.value = profile
-                        _authState.value = AuthState.Success("student")
+                        _authState.value = AuthState.Success(profile?.role ?: "student")
                     }else{
                         _authState.value = AuthState.Error("Profil bulunamadı.")
                     }
